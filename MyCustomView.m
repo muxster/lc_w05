@@ -86,48 +86,37 @@
 
 - (void) touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event
 {
-//	NSLog(@"touches moved count %d, %@", [touches count], touches);
+	NSLog(@"touches moved count %d, %@", [touches count], touches);
 
 	// create a UITouch object and ask it to gather information about our current touch event
-	UITouch *currentTouch = [touches anyObject];
+	NSEnumerator *enumerator = [touches objectEnumerator];
+	UITouch *currentTouch;
+	
 	// create a CGPoint object to extract the X & Y location of the last touch
+	currentTouch = [enumerator nextObject];
 	CGPoint firstTouchCurrentPoint = [currentTouch locationInView:nil];
 	CGPoint firstTouchPreviousPoint = [currentTouch previousLocationInView:nil];
-	
+
+	currentTouch = [enumerator nextObject];
+	CGPoint secondTouchCurrentPoint = [currentTouch locationInView:nil];
+	CGPoint secondTouchPreviousPoint = [currentTouch previousLocationInView:nil];
 	// print out the point we're currently reading a touch from
 	NSLog(@"x: %f, y: %f", firstTouchCurrentPoint.x, firstTouchCurrentPoint.y);
-	NSLog(@"x: %f, y: %f", firstTouchPreviousPoint.x, firstTouchPreviousPoint.y);
+	NSLog(@"x: %f, y: %f", secondTouchCurrentPoint.x, secondTouchCurrentPoint.y);
 	
-	// rotate the box based on our touch
-	if (oneFinger)
+	// rotate the box based on our a multi-touch
+	if (twoFingers)
 	{
-		// if the first contact point is to the right of the current contact point
-		if (firstTouchCurrentPoint.x < firstTouchPreviousPoint.x)
-		{
-			// upper part of the rectangle
-			if (firstTouchCurrentPoint.y < centery)
-			{
-				rotation = rotation-0.1;
-			}
-			else
-			{
-				rotation = rotation+0.1;
-			}
-		}
+		// scale the size of the square equal to the distance between the touches
+		squareSize = sqrt ( (firstTouchCurrentPoint.x - secondTouchCurrentPoint.x)*(firstTouchCurrentPoint.x - secondTouchCurrentPoint.x) + (firstTouchCurrentPoint.y - secondTouchCurrentPoint.y)*(firstTouchCurrentPoint.y - secondTouchCurrentPoint.y));
+		
+		// calculate the arctangent of the angle at which we should be rotating
+		CGFloat testtan = atan((firstTouchCurrentPoint.y-centery)/(firstTouchCurrentPoint.x-centerx));
+		NSLog(@"tangent: %f", testtan);
 
-		// if the first contact point is to theleft of the current contact point
-		if (firstTouchCurrentPoint.x > firstTouchPreviousPoint.x)
-		{
-			// upper part of the rectangle
-			if (firstTouchCurrentPoint.y < centery)
-			{
-				rotation = rotation+0.1;
-			}
-			else
-			{
-				rotation = rotation-0.1;
-			}
-		}
+		// set the rotation + 0.5 radians to allow us to grab the square near a corner
+		// this lets us use the hypotenuse as the size of the square
+		rotation = testtan + 0.5;		
 	}
 	
 	// tell the view to redraw
@@ -148,7 +137,7 @@
 
 - (void) drawRect:(CGRect)rect
 {
-	NSLog(@"drawRect");
+	//NSLog(@"drawRect");
 	
 	centerx = rect.size.width/2;
 	centery = rect.size.height/2;
@@ -165,7 +154,7 @@
 	// Set red stroke
 	CGContextSetRGBStrokeColor(context, 1.0, 0.0, 0.0, 1.0);
 	
-	NSLog (@"rotation: %f", rotation);
+	//NSLog (@"rotation: %f", rotation);
 		
 	// apply rotation to our rectangle based on the 'rotation' variable
 	CGContextRotateCTM(context, rotation);
