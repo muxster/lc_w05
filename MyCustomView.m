@@ -25,8 +25,12 @@
 	// you have to initialize your view here since it's getting
 	// instantiated by the nib
 	squareSize = 100.0f;
-	twoFingers = NO;
 	rotation = 0.5f;
+	
+	// touch flags
+	oneFinger = NO;
+	twoFingers = NO;
+		
 	// You have to explicity turn on multitouch for the view
 	self.multipleTouchEnabled = YES;
 	
@@ -66,6 +70,11 @@
 {
 	NSLog(@"touches began count %d, %@", [touches count], touches);
 	
+	if([touches count] == 1)
+	{
+		oneFinger = YES;
+	}
+	
 	if([touches count] > 1)
 	{
 		twoFingers = YES;
@@ -77,7 +86,49 @@
 
 - (void) touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event
 {
-	NSLog(@"touches moved count %d, %@", [touches count], touches);
+//	NSLog(@"touches moved count %d, %@", [touches count], touches);
+
+	// create a UITouch object and ask it to gather information about our current touch event
+	UITouch *currentTouch = [touches anyObject];
+	// create a CGPoint object to extract the X & Y location of the last touch
+	CGPoint firstTouchCurrentPoint = [currentTouch locationInView:nil];
+	CGPoint firstTouchPreviousPoint = [currentTouch previousLocationInView:nil];
+	
+	// print out the point we're currently reading a touch from
+	NSLog(@"x: %f, y: %f", firstTouchCurrentPoint.x, firstTouchCurrentPoint.y);
+	NSLog(@"x: %f, y: %f", firstTouchPreviousPoint.x, firstTouchPreviousPoint.y);
+	
+	// rotate the box based on our touch
+	if (oneFinger)
+	{
+		// if the first contact point is to the right of the current contact point
+		if (firstTouchCurrentPoint.x < firstTouchPreviousPoint.x)
+		{
+			// upper part of the rectangle
+			if (firstTouchCurrentPoint.y < centery)
+			{
+				rotation = rotation-0.1;
+			}
+			else
+			{
+				rotation = rotation+0.1;
+			}
+		}
+
+		// if the first contact point is to theleft of the current contact point
+		if (firstTouchCurrentPoint.x > firstTouchPreviousPoint.x)
+		{
+			// upper part of the rectangle
+			if (firstTouchCurrentPoint.y < centery)
+			{
+				rotation = rotation+0.1;
+			}
+			else
+			{
+				rotation = rotation-0.1;
+			}
+		}
+	}
 	
 	// tell the view to redraw
 	[self setNeedsDisplay];
@@ -85,10 +136,11 @@
 
 - (void) touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
-	NSLog(@"touches moved count %d, %@", [touches count], touches);
+	//NSLog(@"touches moved count %d, %@", [touches count], touches);
 	
 	// reset the var
 	twoFingers = NO;
+	oneFinger = NO;
 	
 	// tell the view to redraw
 	[self setNeedsDisplay];
@@ -98,8 +150,8 @@
 {
 	NSLog(@"drawRect");
 	
-	CGFloat centerx = rect.size.width/2;
-	CGFloat centery = rect.size.height/2;
+	centerx = rect.size.width/2;
+	centery = rect.size.height/2;
 	CGFloat half = squareSize/2;
 	CGRect theRect = CGRectMake(-half, -half, squareSize, squareSize);
 	
@@ -109,12 +161,14 @@
 	// like Processing pushMatrix
 	CGContextSaveGState(context);
 	CGContextTranslateCTM(context, centerx, centery);
-	
-	// Uncomment to see the rotated square
-	//CGContextRotateCTM(context, rotation);
-	
+		
 	// Set red stroke
 	CGContextSetRGBStrokeColor(context, 1.0, 0.0, 0.0, 1.0);
+	
+	NSLog (@"rotation: %f", rotation);
+		
+	// apply rotation to our rectangle based on the 'rotation' variable
+	CGContextRotateCTM(context, rotation);
 	
 	// Set different based on multitouch
 	if(!twoFingers)
